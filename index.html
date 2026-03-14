@@ -1315,10 +1315,9 @@
       btn.textContent = 'Sending…';
       fb.style.display = 'none';
       emailjs.send('service_nacy0uo', 'template_c3gir3d', {
-        from_name:  form.name.value,
-        from_email: form.email.value,
-        message:    form.message.value,
-        to_email:   'thedynamictraders@gmail.com'
+        name:   form.name.value,
+        email:  form.email.value,
+        title:  form.message.value
       })
       .then(() => {
         fb.style.display = 'block';
