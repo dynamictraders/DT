@@ -105,7 +105,7 @@ body {
   overflow-x: hidden;
 }
 
-/* Grain overlay */
+/* Grain overlay — static PNG noise, GPU-friendly */
 body::before {
   content: '';
   position: fixed;
@@ -113,7 +113,9 @@ body::before {
   pointer-events: none;
   z-index: 9999;
   opacity: var(--grain-opacity);
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
+  background-image: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAIAAAACACAMAAAD04JH5AAAAclBMVEWAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA6bMFhAAAAJXRSTlMbGBkZGhwcHR0eHh8fICEhIiIjIyQkJSUmJicnKCgpKSoqKyuJOWqUAAAAsklEQVR42u3XyQ3CQBBE0YaZ8b6CC+7/TwkJJISE7MNIc6j6J/i6CgAAAADAD9m/vrmMa+u++fVtXY9rXOLUes4j67l1W9q1TN0qi5tarlaPY+sxdx09Tq37OLTu8/g+dB/j3MbR9TyObmPrsfZd6z6Pvde4xqmV6HEcW491aP0a2tCeS+sxjq37PLbua5xjH+fWY+2+dmv1MXS/tB7T0K5ljOPUeq5D6752a+M2AAAA+DefKQnHHRxNKAAAAABJRU5ErkJggg==");
+  background-repeat: repeat;
+  will-change: auto;
 }
 
 a { color: var(--accent); text-decoration: none; }
@@ -148,8 +150,8 @@ sup {
   justify-content: center;
   font-size: 18px;
   box-shadow: var(--shadow-sm);
-  transition: all var(--transition);
-  backdrop-filter: blur(12px);
+  transition: transform 0.2s ease, border-color 0.2s ease;
+  transform: translateZ(0);
 }
 .theme-toggle:hover {
   transform: scale(1.08);
@@ -289,10 +291,12 @@ sup {
   top: 0;
   z-index: 100;
   background: var(--bg-nav);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: saturate(180%) blur(8px);
+  backdrop-filter: saturate(180%) blur(8px);
   border-bottom: 1px solid var(--border);
   transition: background var(--transition);
+  will-change: transform;
+  transform: translateZ(0);
 }
 .nav-scroll {
   display: flex;
@@ -1399,8 +1403,15 @@ sup {
         const activeLink = document.querySelector(`.nav-link[href="#${entry.target.id}"]`);
         if (activeLink) {
           activeLink.classList.add('active');
-          // Scroll nav to show active link
-          activeLink.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+          // Use instant scroll to avoid competing smooth-scroll jank
+          const nav = activeLink.closest('.nav-scroll');
+          if (nav) {
+            const linkLeft = activeLink.offsetLeft;
+            const linkWidth = activeLink.offsetWidth;
+            const navWidth = nav.offsetWidth;
+            const scrollTarget = linkLeft - (navWidth / 2) + (linkWidth / 2);
+            nav.scrollTo({ left: scrollTarget, behavior: 'auto' });
+          }
         }
       }
     });
